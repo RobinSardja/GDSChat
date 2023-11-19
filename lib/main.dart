@@ -1,13 +1,27 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp( const MainApp() ) ;
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final cameras = await availableCameras();
+  final camera = cameras[1];
+
+  runApp( MainApp( camera: camera ) ) ;
 }
 
 ThemeData theme = ThemeData.dark();
 
 class MainApp extends StatefulWidget {
-  const MainApp({super.key});
+  const MainApp({
+    super.key,
+    required this.camera,
+  });
+
+  final CameraDescription camera;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -16,6 +30,28 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
 
   PageController pageController = PageController();
+
+  late CameraController _controller;
+  late Future<void> _initializeControllerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = CameraController(
+      widget.camera,
+      ResolutionPreset.veryHigh,
+    );
+
+    _initializeControllerFuture = _controller.initialize();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+
+    super.dispose();
+  }
 
   int currentIndex = 0;
   void changeIndex(selectedIndex) {
@@ -38,9 +74,18 @@ class _MainAppState extends State<MainApp> {
           onPageChanged: (selectedIndex) {
             changeIndex(selectedIndex);
           },
-          children: const [
-            CameraPage(),
-            MessagePage(),
+          children: [
+            FutureBuilder<void>(
+              future: _initializeControllerFuture,
+              builder: (context, snapshot) {
+                if( snapshot.connectionState == ConnectionState.done ) {
+                  return CameraPreview(_controller);
+                } else {
+                  return const Center(child: CircularProgressIndicator());
+                }
+              }
+            ),
+            const MessagePage(),
           ]
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -63,27 +108,6 @@ class _MainAppState extends State<MainApp> {
           iconSize: 32,
         ),
       ),
-    );
-  }
-}
-
-class CameraPage extends StatefulWidget {
-  const CameraPage({super.key});
-
-  @override
-  State<CameraPage> createState() => _CameraPageState();
-}
-
-class _CameraPageState extends State<CameraPage> {
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme,
-      home: const Scaffold(
-        body: Center(child: Text("Camera")),
-      )
     );
   }
 }
