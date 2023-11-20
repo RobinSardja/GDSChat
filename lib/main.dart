@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,6 @@ Future<void> main() async {
   
 }
 
-
 class TakePictureScreen extends StatefulWidget {
   const TakePictureScreen({
     super.key,
@@ -42,7 +42,13 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
 
+  late XFile image;
+
   final pageController = PageController();
+
+  String buttonText = "Select contact";
+  final FlutterContactPicker contactPicker = FlutterContactPicker();
+  Contact? contact;
 
   int currentIndex = 0;
   void changeIndex(selectedIndex) {
@@ -105,7 +111,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                 ));
                 try {
                   await _initializeControllerFuture;
-                  final image = await _controller.takePicture();
+                  image = await _controller.takePicture();
 
                   late String content;
         
@@ -121,8 +127,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                         bottomNavigationBar: BottomNavigationBar(
                           items: const [
                             BottomNavigationBarItem(
-                              icon: Icon( Icons.save_alt ),
-                              label: "Save",
+                              icon: Icon( Icons.message ),
+                              label: "Send",
                             ),
                             BottomNavigationBarItem(
                               icon: Icon( Icons.delete ),
@@ -133,7 +139,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                             setState(() {
                               switch( selectedIndex ) {
                                 case 0:
-                                  content = "Picture saved!";
+                                  content = "Picture sent!";
                                   break;
                                 case 1:
                                   content = "Picture deleted";
@@ -162,7 +168,18 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           ),
-          const Placeholder(),
+          Center(
+            child: ElevatedButton(
+              child: Text(buttonText),
+              onPressed: () async {
+                Contact? selectedContact = await contactPicker.selectContact();
+                setState(() {
+                  contact = selectedContact;
+                  buttonText = contact.toString();
+                });
+              },
+            )
+          )
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -172,8 +189,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             label: "Camera",
           ),
           BottomNavigationBarItem(
-            icon: Icon( Icons.message ),
-            label: "Message",
+            icon: Icon( Icons.settings ),
+            label: "Settings",
           )
         ],
         currentIndex: currentIndex,
