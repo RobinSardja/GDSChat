@@ -8,15 +8,22 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final cameras = await availableCameras();
-  final camera = cameras[1];
+  final firstCamera = cameras.first;
 
-  runApp( MainApp( camera: camera ) ) ;
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(),
+      home: TakePictureScreen(
+        camera: firstCamera,
+      ),
+    ),
+  );
 }
 
-ThemeData theme = ThemeData.dark();
 
-class MainApp extends StatefulWidget {
-  const MainApp({
+class TakePictureScreen extends StatefulWidget {
+  const TakePictureScreen({
     super.key,
     required this.camera,
   });
@@ -24,20 +31,26 @@ class MainApp extends StatefulWidget {
   final CameraDescription camera;
 
   @override
-  State<MainApp> createState() => _MainAppState();
+  TakePictureScreenState createState() => TakePictureScreenState();
 }
 
-class _MainAppState extends State<MainApp> {
-
-  PageController pageController = PageController();
-
+class TakePictureScreenState extends State<TakePictureScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+
+  final pageController = PageController();
+
+  int currentIndex = 0;
+  void changeIndex(selectedIndex) {
+    setState(() {
+      currentIndex = selectedIndex;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-
+    
     _controller = CameraController(
       widget.camera,
       ResolutionPreset.veryHigh,
@@ -48,87 +61,115 @@ class _MainAppState extends State<MainApp> {
 
   @override
   void dispose() {
+    
     _controller.dispose();
-
     super.dispose();
-  }
-
-  int currentIndex = 0;
-  void changeIndex(selectedIndex) {
-    setState(() {
-      currentIndex = selectedIndex;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Center( child: Text("GDSnapChat") ),
-        ),
-        body: PageView(
-          controller: pageController,
-          onPageChanged: (selectedIndex) {
-            changeIndex(selectedIndex);
-          },
-          children: [
-            FutureBuilder<void>(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Center(child: Text( "GDSChat" ))
+      ),
+      body: PageView(
+        controller: pageController,
+        onPageChanged: (selectedIndex) {
+          changeIndex(selectedIndex);
+        },
+        children: [
+          Scaffold(
+            body: FutureBuilder<void>(
               future: _initializeControllerFuture,
               builder: (context, snapshot) {
-                if( snapshot.connectionState == ConnectionState.done ) {
+                if (snapshot.connectionState == ConnectionState.done) {
                   return CameraPreview(_controller);
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
-              }
+              },
             ),
-            const MessagePage(),
-          ]
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon( Icons.camera_alt ),
-              label: "Camera",
+            floatingActionButton: FloatingActionButton(
+              onPressed: () async {
+                try {
+                  await _initializeControllerFuture;
+                  final image = await _controller.takePicture();
+
+                  late String content;
+        
+                  if (!mounted) return;
+        
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(
+                          title: const Text( "Your picture" ),
+                        ),
+                        body: Image.file( File(image.path) ),
+                        bottomNavigationBar: BottomNavigationBar(
+                          items: const [
+                            BottomNavigationBarItem(
+                              icon: Icon( Icons.save_alt ),
+                              label: "Save",
+                            ),
+                            BottomNavigationBarItem(
+                              icon: Icon( Icons.delete ),
+                              label: "Delete",
+                            )
+                          ],
+                          onTap: (selectedIndex) {
+                            setState(() {
+                              switch( selectedIndex ) {
+                                case 0:
+                                  content = "Picture saved!";
+                                  break;
+                                case 1:
+                                  content = "Picture deleted";
+                                  break;
+                              }
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(content),
+                              action: SnackBarAction(
+                                label: "Ok",
+                                onPressed: () {},
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                            ));
+                            Navigator.of(context).pop();
+                          }
+                        )
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  //
+                }
+              },
+              child: const Icon(Icons.camera_alt),
             ),
-            BottomNavigationBarItem(
-              icon: Icon( Icons.textsms ),
-              label: "Message",
-            ),
-          ],
-          currentIndex: currentIndex,
-          onTap: (selectedIndex) {
-            changeIndex(selectedIndex);
-            pageController.jumpToPage(selectedIndex);
-          },
-          selectedFontSize: 0,
-          iconSize: 32,
-        ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+          ),
+          const Placeholder(),
+        ],
       ),
-    );
-  }
-}
-
-class MessagePage extends StatefulWidget {
-  const MessagePage({super.key});
-
-  @override
-  State<MessagePage> createState() => _MessagePageState();
-}
-
-class _MessagePageState extends State<MessagePage> {
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme,
-      home: const Scaffold(
-        body: Center(child: Text("Message")),
-      )
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon( Icons.camera_alt ),
+            label: "Camera",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon( Icons.message ),
+            label: "Message",
+          )
+        ],
+        currentIndex: currentIndex,
+        onTap: (selectedIndex) {
+          changeIndex(selectedIndex);
+          pageController.jumpToPage(selectedIndex);
+        }
+      ),
     );
   }
 }
