@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,15 +11,18 @@ Future<void> main() async {
   final cameras = await availableCameras();
   final firstCamera = cameras.first;
 
-  runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      home: TakePictureScreen(
-        camera: firstCamera,
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((value) =>
+    runApp(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.dark(),
+        home: TakePictureScreen(
+          camera: firstCamera,
+        ),
       ),
-    ),
+    )
   );
+  
 }
 
 
@@ -83,7 +87,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               future: _initializeControllerFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
-                  return CameraPreview(_controller);
+                  return Center(child: CameraPreview(_controller));
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -91,6 +95,14 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () async {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: const Text("Looking good!"),
+                  action: SnackBarAction(
+                    label: "Thanks!",
+                    onPressed: () {},
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                ));
                 try {
                   await _initializeControllerFuture;
                   final image = await _controller.takePicture();
@@ -105,7 +117,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                         appBar: AppBar(
                           title: const Text( "Your picture" ),
                         ),
-                        body: Image.file( File(image.path) ),
+                        body: Center(child: Image.file( File(image.path) )),
                         bottomNavigationBar: BottomNavigationBar(
                           items: const [
                             BottomNavigationBarItem(

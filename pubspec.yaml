@@ -23,6 +23,6 @@ flutter:
   uses-material-design: true
 
 flutter_launcher_icons:
-  image_path: 'assets/GDSChat icon.png'
+  image_path: 'assets/GDSnapChat icon.png'
   android: true
   ios: true
