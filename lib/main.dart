@@ -121,7 +121,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                     MaterialPageRoute(
                       builder: (context) => Scaffold(
                         appBar: AppBar(
-                          title: const Text( "Your picture" ),
+                          automaticallyImplyLeading: false,
+                          title: const Center(child: Text( "Your picture" )),
                         ),
                         body: Center(child: Image.file( File(image.path) )),
                         bottomNavigationBar: BottomNavigationBar(
@@ -140,6 +141,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                               switch( selectedIndex ) {
                                 case 0:
                                   content = "Picture sent!";
+                                  
                                   break;
                                 case 1:
                                   content = "Picture deleted";
@@ -175,7 +177,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                 Contact? selectedContact = await contactPicker.selectContact();
                 setState(() {
                   contact = selectedContact;
-                  buttonText = contact.toString();
+                  buttonText = contact.toString() == "null" ? "Select contact" : contact.toString() ;
                 });
               },
             )
