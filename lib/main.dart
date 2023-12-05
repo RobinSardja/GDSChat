@@ -177,7 +177,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                 Contact? selectedContact = await contactPicker.selectContact();
                 setState(() {
                   contact = selectedContact;
-                  buttonText = contact.toString() == "null" ? "Select contact" : contact.toString() ;
+                  buttonText = contact.toString() == "null" ? "Select contact" : String.fromCharCodes( contact.toString().codeUnits.where((x) => (x ^0x30) <= 9) );
                 });
               },
             )
