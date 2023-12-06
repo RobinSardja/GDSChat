@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'package:camera/camera.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final cameras = await availableCameras();
-  final firstCamera = cameras.first;
+  final firstCamera = cameras[1];
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((value) =>
     runApp(
@@ -43,12 +45,12 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   late Future<void> _initializeControllerFuture;
 
   late XFile image;
+  late String contact;
 
   final pageController = PageController();
 
   String buttonText = "Select contact";
   final FlutterContactPicker contactPicker = FlutterContactPicker();
-  Contact? contact;
 
   int currentIndex = 0;
   void changeIndex(selectedIndex) {
@@ -137,16 +139,18 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                             )
                           ],
                           onTap: (selectedIndex) {
+                            if( selectedIndex == 0 /* && contact.toString() != "" */ ) {
+                              final Uri smsLaunchUri = Uri(
+                                scheme: "sms",
+                                path: contact,
+                                queryParameters: <String, String>{
+                                  "body": Uri.encodeComponent( "Hello!" ),
+                                }
+                              );
+                              launchUrl(smsLaunchUri);
+                            }
                             setState(() {
-                              switch( selectedIndex ) {
-                                case 0:
-                                  content = "Picture sent!";
-                                  
-                                  break;
-                                case 1:
-                                  content = "Picture deleted";
-                                  break;
-                              }
+                              content = selectedIndex == 0 ? "Picture sent!" : "Picture deleted";
                             });
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(content),
@@ -175,9 +179,11 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               child: Text(buttonText),
               onPressed: () async {
                 Contact? selectedContact = await contactPicker.selectContact();
+                contact = selectedContact.toString();
+                RegExp regEx = RegExp("^[0-9]+");
+                RegExpMatch? match = regEx.firstMatch( contact );
                 setState(() {
-                  contact = selectedContact;
-                  buttonText = contact.toString() == "null" ? "Select contact" : String.fromCharCodes( contact.toString().codeUnits.where((x) => (x ^0x30) <= 9) );
+                  buttonText = match == null ? "Select contact" : contact;
                 });
               },
             )

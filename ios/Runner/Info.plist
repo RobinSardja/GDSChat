@@ -50,5 +50,10 @@
 	<string>Using camera to take picture.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Using microphone to record audio.</string>
+
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+	<string>sms</string>
+	</array>
 </dict>
 </plist>
