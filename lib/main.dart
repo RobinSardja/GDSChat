@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:camera/camera.dart';
-import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,14 +48,15 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
   final pageController = PageController();
 
-  String buttonText = "Select contact";
-  final FlutterContactPicker contactPicker = FlutterContactPicker();
-
   int currentIndex = 0;
   void changeIndex(selectedIndex) {
     setState(() {
       currentIndex = selectedIndex;
     });
+  }
+
+  void sharePicture() async {
+    await Share.shareXFiles( [image, ], );
   }
 
   @override
@@ -65,7 +65,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     
     _controller = CameraController(
       widget.camera,
-      ResolutionPreset.veryHigh,
+      ResolutionPreset.max,
     );
 
     _initializeControllerFuture = _controller.initialize();
@@ -130,8 +130,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                         bottomNavigationBar: BottomNavigationBar(
                           items: const [
                             BottomNavigationBarItem(
-                              icon: Icon( Icons.message ),
-                              label: "Send",
+                              icon: Icon( Icons.share ),
+                              label: "Share",
                             ),
                             BottomNavigationBarItem(
                               icon: Icon( Icons.delete ),
@@ -139,18 +139,9 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                             )
                           ],
                           onTap: (selectedIndex) {
-                            if( selectedIndex == 0 /* && contact.toString() != "" */ ) {
-                              final Uri smsLaunchUri = Uri(
-                                scheme: "sms",
-                                path: contact,
-                                queryParameters: <String, String>{
-                                  "body": Uri.encodeComponent( "Hello!" ),
-                                }
-                              );
-                              launchUrl(smsLaunchUri);
-                            }
+                            if( selectedIndex == 0 ) sharePicture();
                             setState(() {
-                              content = selectedIndex == 0 ? "Picture sent!" : "Picture deleted";
+                              content = selectedIndex == 0 ? "Picture shared!" : "Picture deleted";
                             });
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(content),
@@ -174,20 +165,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
           ),
-          Center(
-            child: ElevatedButton(
-              child: Text(buttonText),
-              onPressed: () async {
-                Contact? selectedContact = await contactPicker.selectContact();
-                contact = selectedContact.toString();
-                RegExp regEx = RegExp("^[0-9]+");
-                RegExpMatch? match = regEx.firstMatch( contact );
-                setState(() {
-                  buttonText = match == null ? "Select contact" : contact;
-                });
-              },
-            )
-          )
+          const Placeholder(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
