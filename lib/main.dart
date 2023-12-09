@@ -11,7 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final cameras = await availableCameras();
-  final firstCamera = cameras[1];
+  final chosenCamera = cameras[1];
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((value) =>
     runApp(
@@ -19,12 +19,11 @@ Future<void> main() async {
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
         home: TakePictureScreen(
-          camera: firstCamera,
+          camera: chosenCamera,
         ),
       ),
-    )
+    ),
   );
-  
 }
 
 class TakePictureScreen extends StatefulWidget {
@@ -40,11 +39,12 @@ class TakePictureScreen extends StatefulWidget {
 }
 
 class TakePictureScreenState extends State<TakePictureScreen> {
-  late CameraController _controller;
-  late Future<void> _initializeControllerFuture;
+  late CameraController controller;
+  late Future<void> initializeControllerFuture;
 
   late XFile image;
   late String contact;
+  late String snackBarContent;
 
   final pageController = PageController();
 
@@ -63,18 +63,18 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   void initState() {
     super.initState();
     
-    _controller = CameraController(
+    controller = CameraController(
       widget.camera,
       ResolutionPreset.max,
     );
 
-    _initializeControllerFuture = _controller.initialize();
+    initializeControllerFuture = controller.initialize();
   }
 
   @override
   void dispose() {
+    controller.dispose();
     
-    _controller.dispose();
     super.dispose();
   }
 
@@ -92,10 +92,10 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         children: [
           Scaffold(
             body: FutureBuilder<void>(
-              future: _initializeControllerFuture,
+              future: initializeControllerFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
-                  return Center(child: CameraPreview(_controller));
+                  return Center(child: CameraPreview(controller));
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -112,10 +112,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   behavior: SnackBarBehavior.floating,
                 ));
                 try {
-                  await _initializeControllerFuture;
-                  image = await _controller.takePicture();
-
-                  late String content;
+                  await initializeControllerFuture;
+                  image = await controller.takePicture();
         
                   if (!mounted) return;
         
@@ -141,10 +139,10 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                           onTap: (selectedIndex) {
                             if( selectedIndex == 0 ) sharePicture();
                             setState(() {
-                              content = selectedIndex == 0 ? "Picture shared!" : "Picture deleted";
+                              snackBarContent = selectedIndex == 0 ? "Picture shared!" : "Picture deleted";
                             });
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(content),
+                              content: Text(snackBarContent),
                               action: SnackBarAction(
                                 label: "Ok",
                                 onPressed: () {},
@@ -152,8 +150,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                               behavior: SnackBarBehavior.floating,
                             ));
                             Navigator.of(context).pop();
-                          }
-                        )
+                          },
+                        ),
                       ),
                     ),
                   );
@@ -177,13 +175,13 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           BottomNavigationBarItem(
             icon: Icon( Icons.settings ),
             label: "Settings",
-          )
+          ),
         ],
         currentIndex: currentIndex,
         onTap: (selectedIndex) {
           changeIndex(selectedIndex);
           pageController.jumpToPage(selectedIndex);
-        }
+        },
       ),
     );
   }
