@@ -1,3 +1,3 @@
-# gdsnapchat
+# GDSChat
 
-A new Flutter project.
+University of South Florida Google Developer Student Clubs
