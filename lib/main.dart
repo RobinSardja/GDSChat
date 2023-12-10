@@ -18,7 +18,7 @@ Future<void> main() async {
       MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
-        home: TakePictureScreen(
+        home: GDSChat(
           camera: chosenCamera,
         ),
       ),
@@ -26,8 +26,8 @@ Future<void> main() async {
   );
 }
 
-class TakePictureScreen extends StatefulWidget {
-  const TakePictureScreen({
+class GDSChat extends StatefulWidget {
+  const GDSChat({
     super.key,
     required this.camera,
   });
@@ -35,18 +35,18 @@ class TakePictureScreen extends StatefulWidget {
   final CameraDescription camera;
 
   @override
-  TakePictureScreenState createState() => TakePictureScreenState();
+  GDSChatState createState() => GDSChatState();
 }
 
-class TakePictureScreenState extends State<TakePictureScreen> {
+class GDSChatState extends State<GDSChat> {
+
+  final pageController = PageController();
+
   late CameraController controller;
   late Future<void> initializeControllerFuture;
 
   late XFile image;
-  late String contact;
   late String snackBarContent;
-
-  final pageController = PageController();
 
   int currentIndex = 0;
   void changeIndex(selectedIndex) {
