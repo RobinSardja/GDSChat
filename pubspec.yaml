@@ -11,7 +11,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
-  flutter_native_contact_picker: ^0.0.5
   path: ^1.8.3
   path_provider: ^2.1.1
   share_plus: ^7.2.1
